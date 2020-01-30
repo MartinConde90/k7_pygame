@@ -40,18 +40,16 @@ class Bomb(sprite.Sprite):
                 self.frame_act = 0
             #ésto es lo mismo que de arriba ---> self.frame_act = (self.frame_act + 1) % self.num_frames
 
-
     @property #ahora es un propiedad, no un método, como image
     def image(self):
         return self.frames[self.frame_act]
-
-
 
 class Robot(sprite.Sprite):
     speed = 5
     pictures = ['robot_r01.png', 'robot_r02.png', 'robot_r03.png', 'robot_r04.png']
     w = 64 #altura robot, lo pone en la imagen
     h = 68 #ancho robot
+    lives = 3
 
     def __init__(self, x=0, y=0):
         self.x = x
@@ -95,6 +93,14 @@ class Robot(sprite.Sprite):
     def go_left(self):
         self.rect.x = max(0, self.rect.x - self.speed)
         self.change_frame()
+
+    def comprobarToques(self, group):
+        colisiones = sprite.spritecollide(self, group, True)
+        for b in colisiones:
+            self.lives -= 1
+        
+        return self.lives
+
 
     @property
     def image(self):
@@ -153,21 +159,19 @@ class Game:
         if keys_pressed[K_LEFT]:
             self.robot.go_left()
 
-
     def mainloop(self):
         while True:
             dt = self.clock.tick(FPS) #para controlar los frames
 
             self.handleEvents()
             
+            #Controlar si el robot toca una bomba
+            if self.robot.comprobarToques(self.bombs_group) == 0: #viene del return de contador de vidas
+                self.gameOver()
+
                 #...Procesar el resto de eventos
             self.screen.fill(self.background_color) #sobre screen, le metemos el color
-            '''
-            self.screen.blit(self.robot.image, self.robot.position) #pones esa imagen donde te digo, ya no hace falta poner robot.position() al poner arriba @property
-            for b in self.bombas:
-                b.update(dt)
-                self.screen.blit(b.image, b.position)
-            '''
+            
             self.all_group.update(dt)
             self.all_group.draw(self.screen) #me lo pintas en la pantalla
             display.flip() # esto coge todo lo que se ha hecho, y lo mete en la ventana
